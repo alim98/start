@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model StartupIdea {
+  id                String   @id @default(cuid())
+  
+  // Basic Info
+  name              String
+  tagline           String
+  description       String
+  category          String
+  industry          String
+  
+  // Market Data
+  targetMarket      String   // JSON array as string for SQLite
+  marketSize        String?
+  competitorCount   Int?
+  
+  // Product Details
+  stage             String   // idea, mvp, launched, growing, mature
+  launchDate        DateTime?
+  website           String?
+  
+  // Metrics (if available)
+  upvotes           Int?
+  users             Int?
+  revenue           String?
+  funding           String?
+  
+  // Technical
+  techStack         String   // JSON array as string for SQLite
+  requiresML        Boolean  @default(false)
+  requiresBlockchain Boolean @default(false)
+  complexity        String   // low, medium, high
+  
+  // Business Model
+  revenueModel      String   // subscription, transaction, ads, etc.
+  pricing           String?
+  
+  // Differentiation
+  uniqueValue       String?
+  moat              String?
+  
+  // Source
+  source            String   // producthunt, g2, microacquire, etc.
+  sourceUrl         String
+  sourceId          String?
+  
+  // Metadata
+  scrapedAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([category])
+  @@index([industry])
+  @@index([source])
+  @@index([stage])
+}
+
+model UserSubmission {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  
+  // Input
+  title             String
+  description       String
+  industry          String?
+  targetMarket      String?
+  language          String   @default("en") // 'en' or 'fa'
+  
+  // Results
+  score             Int?
+  verdict           String?  // Promising, Maybe, Garbage
+  analysisJson      String?  // Full JSON response from LLM
+  
+  // User Info
+  email             String?
+  ipAddress         String?
+}

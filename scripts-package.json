@@ -1,0 +1,7 @@
+{
+    "scripts": {
+        "scrape:ph": "ts-node scripts/scrapers/product-hunt-scraper.ts",
+        "scrape:ph:test": "ts-node scripts/scrapers/product-hunt-scraper.ts 10",
+        "db:stats": "ts-node scripts/db-stats.ts"
+    }
+}
