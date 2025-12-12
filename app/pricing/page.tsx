@@ -71,7 +71,7 @@ export default function PricingPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'خطا در قیمت‌گذاری');
       }
@@ -95,7 +95,7 @@ export default function PricingPage() {
     let colorClass = 'bg-red-500';
     if (score >= 8) colorClass = 'bg-green-500';
     else if (score >= 6) colorClass = 'bg-yellow-500';
-    
+
     return (
       <div className="w-full bg-gray-200 rounded-full h-2.5">
         <div className={`${colorClass} h-2.5 rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
@@ -106,17 +106,17 @@ export default function PricingPage() {
   const formatPrice = (price: string) => {
     // Extract number and unit from string like "450 میلیون تومان" or "2 میلیارد تومان"
     const numberMatch = price.match(/([\d,\.]+)/);
-    
+
     if (!numberMatch) return price;
-    
+
     const number = numberMatch[1].replace(/,/g, '');
     const formatted = parseInt(number).toLocaleString('fa-IR');
-    
+
     // Check if it has "تومان" already, if not add unit based on size
     if (price.includes('تومان')) {
       return price.replace(/([\d,\.]+)/, formatted);
     }
-    
+
     // If no unit, determine based on number size
     const numValue = parseInt(number);
     if (numValue >= 1000) {
@@ -132,7 +132,7 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <Link href="/" className="text-sm text-teal-600 hover:text-teal-700 mb-4 inline-block">
-            ← بازگشت به ارزیاب ایده
+            ← بازگشت به خانه
           </Link>
           <h1 className="text-4xl font-bold text-slate-900 mb-3">
             💰 قیمت‌گذاری هوش مصنوعی ایده
@@ -496,7 +496,7 @@ export default function PricingPage() {
 
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-5">
               <p className="text-center text-sm text-slate-700">
-                <span className="font-bold text-orange-700">⚠️ توجه:</span> این ارزش‌گذاری تخمینی است و بر اساس تحلیل هوش مصنوعی. 
+                <span className="font-bold text-orange-700">⚠️ توجه:</span> این ارزش‌گذاری تخمینی است و بر اساس تحلیل هوش مصنوعی.
                 برای سرمایه‌گذاری واقعی حتماً با مشاورین مالی و ارزیاب‌های حرفه‌ای مشورت کنید.
               </p>
             </div>

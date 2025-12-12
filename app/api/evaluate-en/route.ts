@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         const detectedCategory = detectCategory(body.description, body.industry);
         const detectedRevenueModel = detectRevenueModel(body.description);
 
-        let similarStartups = [];
+        let similarStartups: any[] = [];
         try {
             similarStartups = await getSimilarIdeas({
                 category: detectedCategory,

@@ -420,10 +420,13 @@ Evaluated by StartupEvaluator.app
                 {/* Header */}
                 <div className="text-center mb-12 animate-fade-in md:mb-16">
                     <div className="flex justify-center gap-4 mb-6">
+                        <Link href="/" className="text-sm font-medium text-slate-500 hover:text-indigo-600 px-4 py-2 hover:bg-white/50 rounded-full transition-all flex items-center gap-2">
+                            🏠 Home
+                        </Link>
                         <Link href="/en" className="text-sm font-bold text-slate-900 px-4 py-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all">
                             🇺🇸 English
                         </Link>
-                        <Link href="/" className="text-sm font-medium text-slate-500 hover:text-indigo-600 px-4 py-2 hover:bg-white/50 rounded-full transition-all">
+                        <Link href="/fa" className="text-sm font-medium text-slate-500 hover:text-indigo-600 px-4 py-2 hover:bg-white/50 rounded-full transition-all">
                             🇮🇷 فارسی
                         </Link>
                     </div>

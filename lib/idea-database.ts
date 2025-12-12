@@ -55,9 +55,9 @@ export async function searchIdeas(query: string, limit: number = 20) {
     return prisma.startupIdea.findMany({
         where: {
             OR: [
-                { name: { contains: query, mode: 'insensitive' } },
-                { description: { contains: query, mode: 'insensitive' } },
-                { tagline: { contains: query, mode: 'insensitive' } },
+                { name: { contains: query } },
+                { description: { contains: query } },
+                { tagline: { contains: query } },
             ],
         },
         take: limit,
