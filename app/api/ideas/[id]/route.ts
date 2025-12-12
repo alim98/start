@@ -7,11 +7,10 @@ import { getIdeaById } from '@/lib/idea-database';
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } }
 ) {
     try {
-        const { id } = await params;
-        const idea = await getIdeaById(id);
+        const idea = await getIdeaById(params.id);
 
         if (!idea) {
             return NextResponse.json(
