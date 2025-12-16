@@ -50,9 +50,10 @@ export async function POST(request: NextRequest) {
         });
 
         // Set session cookie (24 hours)
+        // Note: secure:false because EvenNode free tier uses HTTP, not HTTPS
         response.cookies.set('user_session', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: false, // Set to true only when using HTTPS
             sameSite: 'lax',
             maxAge: 24 * 60 * 60, // 24 hours
             path: '/',
