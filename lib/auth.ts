@@ -59,6 +59,9 @@ export async function canAccessApp(appMode: string): Promise<boolean> {
 // Usage tracking using database (persists across server restarts)
 import { prisma } from './idea-database';
 
+// In-memory fallback for when DB is not available
+const usageStore = new Map<string, { count: number; date: string }>();
+
 function getTodayDate(): string {
     return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
@@ -67,18 +70,26 @@ export async function getUsageCount(username: string): Promise<number> {
     const today = getTodayDate();
 
     try {
-        const usage = await prisma.dailyUsage.findUnique({
-            where: {
-                username_date: {
-                    username,
-                    date: today,
+        // Try DB first
+        if (process.env.DATABASE_URL) {
+            const usage = await prisma.dailyUsage.findUnique({
+                where: {
+                    username_date: {
+                        username,
+                        date: today,
+                    },
                 },
-            },
-        });
-
-        return usage?.count || 0;
+            });
+            return usage?.count || 0;
+        }
+        throw new Error('No DB');
     } catch (error) {
-        console.error('Error getting usage count:', error);
+        // Fallback to in-memory
+        const key = `${username}_${today}`;
+        const usage = usageStore.get(key);
+        if (usage && usage.date === today) {
+            return usage.count;
+        }
         return 0;
     }
 }
@@ -87,27 +98,43 @@ export async function incrementUsage(username: string): Promise<number> {
     const today = getTodayDate();
 
     try {
-        const usage = await prisma.dailyUsage.upsert({
-            where: {
-                username_date: {
+        // Try DB first
+        if (process.env.DATABASE_URL) {
+            const usage = await prisma.dailyUsage.upsert({
+                where: {
+                    username_date: {
+                        username,
+                        date: today,
+                    },
+                },
+                create: {
                     username,
                     date: today,
+                    count: 1,
                 },
-            },
-            create: {
-                username,
-                date: today,
-                count: 1,
-            },
-            update: {
-                count: { increment: 1 },
-            },
+                update: {
+                    count: { increment: 1 },
+                },
+            });
+            return usage.count;
+        }
+        throw new Error('No DB');
+    } catch (error) {
+        // Fallback to in-memory
+        const key = `${username}_${today}`;
+        const current = usageStore.get(key);
+
+        let newCount = 1;
+        if (current && current.date === today) {
+            newCount = current.count + 1;
+        }
+
+        usageStore.set(key, {
+            count: newCount,
+            date: today
         });
 
-        return usage.count;
-    } catch (error) {
-        console.error('Error incrementing usage:', error);
-        return 0;
+        return newCount;
     }
 }
 
