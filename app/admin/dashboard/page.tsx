@@ -5,6 +5,16 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 async function getStats() {
+    // If prisma is not available, return empty stats
+    if (!prisma) {
+        return {
+            total: 0,
+            avgScore: 0,
+            recent: [],
+            languageStats: []
+        };
+    }
+
     const total = await prisma.userSubmission.count();
 
     // Calculate average score

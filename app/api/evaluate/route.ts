@@ -172,22 +172,24 @@ export async function POST(request: NextRequest) {
 
     console.log('Evaluation successful, returning result');
 
-    // Save to Database
-    try {
-      await prisma.userSubmission.create({
-        data: {
-          title: body.title || 'بدون عنوان',
-          description: body.description,
-          industry: body.skills, // Mapping 'skills' to industry as best effort
-          targetMarket: body.targetMarket,
-          language: 'fa',
-          score: evaluation.score || 50,
-          verdict: evaluation.verdict,
-          analysisJson: JSON.stringify(evaluation)
-        }
-      });
-    } catch (err) {
-      console.error('Failed to save Persian submission:', err);
+    // Save to Database (if available)
+    if (prisma) {
+      try {
+        await prisma.userSubmission.create({
+          data: {
+            title: body.title || 'بدون عنوان',
+            description: body.description,
+            industry: body.skills, // Mapping 'skills' to industry as best effort
+            targetMarket: body.targetMarket,
+            language: 'fa',
+            score: evaluation.score || 50,
+            verdict: evaluation.verdict,
+            analysisJson: JSON.stringify(evaluation)
+          }
+        });
+      } catch (err) {
+        console.error('Failed to save Persian submission:', err);
+      }
     }
 
     // Record usage
