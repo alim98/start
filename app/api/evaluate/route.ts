@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGroqClient } from '@/lib/groq-client';
+import { checkUsageLimit, recordUsage } from '@/lib/usage-check';
 
 import { prisma } from '@/lib/idea-database';
 
@@ -14,6 +15,15 @@ interface EvaluationRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check usage limit
+    const usageCheck = await checkUsageLimit();
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        { error: usageCheck.error },
+        { status: 429 }
+      );
+    }
+
     const body: EvaluationRequest = await request.json();
 
     console.log('Received evaluation request:', {
@@ -168,6 +178,9 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error('Failed to save Persian submission:', err);
     }
+
+    // Record usage
+    await recordUsage();
 
     return NextResponse.json(evaluation);
   } catch (error) {

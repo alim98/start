@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGroqClient } from '@/lib/groq-client';
+import { checkUsageLimit, recordUsage } from '@/lib/usage-check';
 import { calculateStartupScore, extractScoringInputsFromDescription, type IdeaInput } from '@/lib/scoring-engine';
 import { getSimilarIdeas, prisma } from '@/lib/idea-database'; // Use the shared db instance
 import { detectCategory, detectRevenueModel } from '@/lib/category-detector';

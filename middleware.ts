@@ -12,26 +12,31 @@ function getAppMode(): AppMode {
     return 'all';
 }
 
+// Check if auth is required (can be disabled via env var)
+function isAuthRequired(): boolean {
+    return process.env.REQUIRE_AUTH === 'true' || process.env.NEXT_PUBLIC_REQUIRE_AUTH === 'true';
+}
+
 function getAllowedRoutes(mode: AppMode): string[] | 'all' {
     switch (mode) {
         case 'en':
             return [
-                '/', '/en',
-                '/api/evaluate-en', '/api/generate-idea-en', '/api/premium-report-en',
+                '/', '/en', '/login',
+                '/api/auth', '/api/evaluate-en', '/api/generate-idea-en', '/api/premium-report-en',
                 '/api/generate-pitch-deck', '/api/capture-email',
                 '/_next', '/favicon.ico'
             ];
         case 'fa':
             return [
-                '/', '/fa', '/pricing',
-                '/api/evaluate', '/api/generate-idea', '/api/premium-report',
+                '/', '/fa', '/pricing', '/login',
+                '/api/auth', '/api/evaluate', '/api/generate-idea', '/api/premium-report',
                 '/api/price-idea', '/api/generate-pitch-deck-fa', '/api/capture-email',
                 '/_next', '/favicon.ico'
             ];
         case 'park':
             return [
-                '/', '/park-demo', '/park-demo-en',
-                '/api/park-evaluate', '/api/capture-email',
+                '/', '/park-demo', '/park-demo-en', '/login',
+                '/api/auth', '/api/park-evaluate', '/api/capture-email',
                 '/_next', '/favicon.ico'
             ];
         case 'all':
@@ -40,37 +45,88 @@ function getAllowedRoutes(mode: AppMode): string[] | 'all' {
     }
 }
 
+// Routes that don't require authentication
+const publicRoutes = ['/login', '/api/auth/login', '/_next', '/favicon.ico'];
+
+// Parse session cookie (duplicated for edge runtime)
+function parseSessionToken(token: string): { username: string; expiresAt: number } | null {
+    try {
+        const data = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+        if (data.expiresAt > Date.now()) {
+            return data;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
 export function middleware(request: NextRequest) {
     const mode = getAppMode();
     const allowedRoutes = getAllowedRoutes(mode);
+    const pathname = request.nextUrl.pathname;
+    const authRequired = isAuthRequired();
 
-    // If all routes are allowed, skip middleware
-    if (allowedRoutes === 'all') {
+    // Skip static files
+    if (pathname.startsWith('/_next') || pathname === '/favicon.ico') {
         return NextResponse.next();
     }
 
-    const pathname = request.nextUrl.pathname;
+    // Check if route is allowed for this app mode
+    if (allowedRoutes !== 'all') {
+        const isAllowed = allowedRoutes.some(route => {
+            if (route === pathname) return true;
+            if (pathname.startsWith(route + '/')) return true;
+            return false;
+        });
 
-    // Check if the current path is allowed
-    const isAllowed = allowedRoutes.some(route => {
-        if (route === pathname) return true;
-        if (pathname.startsWith(route + '/')) return true;
-        if (pathname.startsWith('/_next')) return true;
-        return false;
-    });
+        if (!isAllowed) {
+            const defaultRoutes: Record<AppMode, string> = {
+                'en': '/en',
+                'fa': '/fa',
+                'park': '/park-demo',
+                'all': '/'
+            };
 
-    if (!isAllowed) {
-        // Redirect to the default route for this mode
-        const defaultRoutes: Record<AppMode, string> = {
-            'en': '/en',
-            'fa': '/fa',
-            'park': '/park-demo',
-            'all': '/'
-        };
+            const url = request.nextUrl.clone();
+            url.pathname = defaultRoutes[mode];
+            return NextResponse.redirect(url);
+        }
+    }
 
+    // If auth is not required, allow all
+    if (!authRequired) {
+        return NextResponse.next();
+    }
+
+    // Check if this is a public route
+    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+    if (isPublicRoute) {
+        return NextResponse.next();
+    }
+
+    // Check for session cookie
+    const sessionCookie = request.cookies.get('user_session');
+
+    if (!sessionCookie) {
+        // Redirect to login
         const url = request.nextUrl.clone();
-        url.pathname = defaultRoutes[mode];
+        url.pathname = '/login';
+        url.searchParams.set('redirect', pathname);
         return NextResponse.redirect(url);
+    }
+
+    // Validate session
+    const session = parseSessionToken(sessionCookie.value);
+    if (!session) {
+        // Invalid/expired session
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        url.searchParams.set('redirect', pathname);
+        const response = NextResponse.redirect(url);
+        // Clear invalid cookie
+        response.cookies.delete('user_session');
+        return response;
     }
 
     return NextResponse.next();
@@ -78,12 +134,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };
