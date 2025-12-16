@@ -112,7 +112,6 @@ All text in Persian, all monetary values in USD.`;
 
     // Validate response
     const required = [
-      'estimated_value_irr',
       'estimated_value_usd',
       'valuation_breakdown',
       'reasoning',
@@ -129,15 +128,24 @@ All text in Persian, all monetary values in USD.`;
 
     // Add valuation_range if not present
     if (!pricingData.valuation_range) {
-      // Extract numbers from estimated values and create range
-      const irrMatch = pricingData.estimated_value_irr.match(/(\d+)/);
-      const baseIRR = irrMatch ? parseInt(irrMatch[1]) : 100;
+      // Extract number from USD value (e.g., "$500,000" or "$2M")
+      const usdValue = pricingData.estimated_value_usd;
+      let baseUSD = 500000; // default
+
+      if (usdValue.includes('M')) {
+        const match = usdValue.match(/([\d.]+)M/);
+        if (match) baseUSD = parseFloat(match[1]) * 1000000;
+      } else if (usdValue.includes('K')) {
+        const match = usdValue.match(/([\d.]+)K/);
+        if (match) baseUSD = parseFloat(match[1]) * 1000;
+      } else {
+        const match = usdValue.match(/([\d,]+)/);
+        if (match) baseUSD = parseInt(match[1].replace(/,/g, ''));
+      }
 
       pricingData.valuation_range = {
-        min_irr: `${Math.floor(baseIRR * 0.7)} میلیون تومان`,
-        max_irr: `${Math.floor(baseIRR * 1.5)} میلیون تومان`,
-        min_usd: `$${Math.floor((baseIRR * 0.7) / 60)}K`,
-        max_usd: `$${Math.floor((baseIRR * 1.5) / 60)}K`,
+        min_usd: `$${Math.floor(baseUSD * 0.7).toLocaleString()}`,
+        max_usd: `$${Math.floor(baseUSD * 1.5).toLocaleString()}`,
       };
     }
 
