@@ -51,7 +51,7 @@ function getAllowedRoutes(mode: AppMode): string[] | 'all' {
 const publicRoutes = ['/login', '/api/auth/login', '/_next', '/favicon.ico'];
 
 // Parse session cookie (duplicated for edge runtime)
-function parseSessionToken(token: string): { username: string; expiresAt: number } | null {
+function parseSessionToken(token: string): { username: string; allowedApps: string[]; expiresAt: number } | null {
     try {
         const data = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
         if (data.expiresAt > Date.now()) {
@@ -61,6 +61,12 @@ function parseSessionToken(token: string): { username: string; expiresAt: number
     } catch {
         return null;
     }
+}
+
+// Check if user has access to the current app mode
+function userHasAppAccess(allowedApps: string[], appMode: AppMode): boolean {
+    if (allowedApps.includes('all')) return true;
+    return allowedApps.includes(appMode);
 }
 
 export function middleware(request: NextRequest) {
@@ -127,6 +133,18 @@ export function middleware(request: NextRequest) {
         url.searchParams.set('redirect', pathname);
         const response = NextResponse.redirect(url);
         // Clear invalid cookie
+        response.cookies.delete('user_session');
+        return response;
+    }
+
+    // Check if user has access to this app mode
+    if (mode !== 'all' && !userHasAppAccess(session.allowedApps || [], mode)) {
+        // User doesn't have access to this app
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        url.searchParams.set('error', 'no_access');
+        const response = NextResponse.redirect(url);
+        // Clear session since they can't use this app
         response.cookies.delete('user_session');
         return response;
     }

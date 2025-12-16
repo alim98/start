@@ -7,14 +7,16 @@ const USAGE_PREFIX = 'usage_';
 // Simple session data structure
 export interface SessionData {
     username: string;
+    allowedApps: string[];
     loginTime: number;
     expiresAt: number;
 }
 
 // Create a session token (simple base64 encoding - use JWT in production)
-export function createSessionToken(username: string): string {
+export function createSessionToken(username: string, allowedApps: string[]): string {
     const session: SessionData = {
         username,
+        allowedApps,
         loginTime: Date.now(),
         expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     };
