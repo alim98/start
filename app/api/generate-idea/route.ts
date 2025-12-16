@@ -11,9 +11,19 @@ interface GenerateIdeaRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check usage limit
+    const usageCheck = await checkUsageLimit();
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        { error: usageCheck.error },
+        { status: 429 }
+      );
+    }
+
     const body: GenerateIdeaRequest = await request.json();
 
     if (!process.env.GROQ_API_KEY) {
+      console.error('GROQ_API_KEY is not configured');
       return NextResponse.json(
         { error: 'Groq API key not configured' },
         { status: 500 }
@@ -125,6 +135,9 @@ ${body.baseIdea}
     }
 
     console.log('Generated idea:', ideaData.title);
+
+    // Record usage
+    await recordUsage();
 
     return NextResponse.json(ideaData);
   } catch (error) {
