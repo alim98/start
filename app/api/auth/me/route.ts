@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const usedToday = getUsageCount(user.username);
-        const remaining = getRemainingUsage(user);
+        const usedToday = await getUsageCount(user.username);
+        const remaining = await getRemainingUsage(user);
 
         return NextResponse.json({
             authenticated: true,

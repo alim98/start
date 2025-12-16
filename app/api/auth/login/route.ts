@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
         // Create session with user's allowed apps
         const token = createSessionToken(username, user.allowedApps);
-        const usageCount = getUsageCount(username);
+        const usageCount = await getUsageCount(username);
 
         // Set cookie and respond
         const response = NextResponse.json({

@@ -85,3 +85,15 @@ model UserSubmission {
   email             String?
   ipAddress         String?
 }
+
+model DailyUsage {
+  id        String   @id @default(cuid())
+  username  String
+  date      String   // YYYY-MM-DD format
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+  
+  @@unique([username, date])
+  @@index([username])
+  @@index([date])
+}

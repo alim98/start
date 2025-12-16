@@ -64,7 +64,7 @@ export async function checkUsageLimit(): Promise<UsageCheckResult> {
         };
     }
 
-    const usedToday = getUsageCount(user.username);
+    const usedToday = await getUsageCount(user.username);
     const remaining = user.dailyLimit - usedToday;
 
     if (remaining <= 0) {
@@ -95,5 +95,5 @@ export async function recordUsage(): Promise<void> {
     const session = parseSessionToken(sessionCookie.value);
     if (!session) return;
 
-    incrementUsage(session.username);
+    await incrementUsage(session.username);
 }

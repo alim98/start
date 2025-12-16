@@ -56,47 +56,67 @@ export async function canAccessApp(appMode: string): Promise<boolean> {
     return hasAppAccess(user, appMode);
 }
 
-// Usage tracking using in-memory store (use Redis/DB in production)
-const usageStore = new Map<string, { count: number; date: string }>();
+// Usage tracking using database (persists across server restarts)
+import { prisma } from './idea-database';
 
-export function getTodayKey(username: string): string {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    return `${USAGE_PREFIX}${username}_${today}`;
+function getTodayDate(): string {
+    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
-export function getUsageCount(username: string): number {
-    const key = getTodayKey(username);
-    const usage = usageStore.get(key);
-    if (!usage) return 0;
+export async function getUsageCount(username: string): Promise<number> {
+    const today = getTodayDate();
 
-    // Check if it's still today
-    const today = new Date().toISOString().split('T')[0];
-    if (usage.date !== today) {
-        usageStore.delete(key);
+    try {
+        const usage = await prisma.dailyUsage.findUnique({
+            where: {
+                username_date: {
+                    username,
+                    date: today,
+                },
+            },
+        });
+
+        return usage?.count || 0;
+    } catch (error) {
+        console.error('Error getting usage count:', error);
         return 0;
     }
-
-    return usage.count;
 }
 
-export function incrementUsage(username: string): number {
-    const key = getTodayKey(username);
-    const today = new Date().toISOString().split('T')[0];
-    const current = getUsageCount(username);
+export async function incrementUsage(username: string): Promise<number> {
+    const today = getTodayDate();
 
-    usageStore.set(key, {
-        count: current + 1,
-        date: today,
-    });
+    try {
+        const usage = await prisma.dailyUsage.upsert({
+            where: {
+                username_date: {
+                    username,
+                    date: today,
+                },
+            },
+            create: {
+                username,
+                date: today,
+                count: 1,
+            },
+            update: {
+                count: { increment: 1 },
+            },
+        });
 
-    return current + 1;
+        return usage.count;
+    } catch (error) {
+        console.error('Error incrementing usage:', error);
+        return 0;
+    }
 }
 
-export function getRemainingUsage(user: User): number {
-    const used = getUsageCount(user.username);
+export async function getRemainingUsage(user: User): Promise<number> {
+    const used = await getUsageCount(user.username);
     return Math.max(0, user.dailyLimit - used);
 }
 
-export function canUseService(user: User): boolean {
-    return getRemainingUsage(user) > 0;
+export async function canUseService(user: User): Promise<boolean> {
+    const remaining = await getRemainingUsage(user);
+    return remaining > 0;
 }
