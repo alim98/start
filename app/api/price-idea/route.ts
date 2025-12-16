@@ -13,30 +13,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemPrompt = `شما یک سرمایه‌گذار و ارزیاب حرفه‌ای استارتاپ هستید.
 
-# روش قیمت‌گذاری: Comparable Company Analysis
+    const systemPrompt = `You are a professional startup valuation expert with deep knowledge of global startup markets.
 
-**وظیفه:** ارزش ایده را بر اساس استارتاپ‌های مشابه واقعی که ارزش‌گذاری شده‌اند تخمین بزن.
+# IMPORTANT DISCLAIMER
+**Since accurate Iranian startup benchmark data is NOT available, this valuation is based on GLOBAL MARKET STANDARDS and comparable international startups.**
 
-## مراحل:
-1. **شناسایی ۳-۵ استارتاپ مشابه** که ارزش‌گذاری واقعی دارند (ایرانی یا جهانی)
-2. **استخراج ارزش آنها** به دلار
-3. **تعدیل بر اساس مرحله:** ایده=1%، MVP=5%، محصول=15% از ارزش رشد یافته
-4. **تعدیل بر اساس بازار:** ایران=10-30% بازار جهانی
-5. **محاسبه نهایی به دلار**
-6. **تبدیل به تومان:** دلار × 119,000
+# Valuation Method: Comparable Company Analysis + Market Multiples
 
-## قوانین مهم:
-- از دانش خودت درباره ارزش‌گذاری استارتاپ‌های واقعی استفاده کن
-- اول قیمت دلاری بده، بعد تومانی
-- واقع‌بین باش - استارتاپ‌های ایرانی خیلی کمتر از مشابه جهانی ارزش دارند
-- حتماً نام استارتاپ‌های مشابه و ارزش واقعی آنها را ذکر کن
+## Your Task:
+Provide a realistic global market valuation in USD for the startup idea.
 
-## فرمت JSON:
+## Steps:
+1. **Identify 3-5 similar global startups** with real valuations
+2. **Extract their valuations** in USD
+3. **Adjust for stage:** Idea=1-3%, Prototype=5-10%, MVP=10-20%, Product=20-40% of mature valuation
+4. **Adjust for market size and traction**
+5. **Calculate final USD valuation**
+
+## Critical Rules:
+- ALL monetary values MUST be in USD (e.g., "$500,000", "$2M", "$50K")
+- Be realistic and conservative
+- Use actual comparable startup valuations
+- Explain methodology clearly
+- Include disclaimer about global market pricing
+
+## JSON Format (ALL TEXT IN PERSIAN except monetary values in USD):
 {
   "estimated_value_usd": "$XXX,XXX",
-  "estimated_value_irr": "X میلیارد تومان",
+  "disclaimer": "⚠️ توجه: به دلیل عدم وجود بنچمارک دقیق استارتاپ‌های ایرانی، این ارزش‌گذاری بر اساس استانداردهای بازار جهانی و استارتاپ‌های مشابه بین‌المللی محاسبه شده است.",
   "valuation_breakdown": {
     "market_size_score": 0-10,
     "innovation_score": 0-10,
@@ -45,40 +50,34 @@ export async function POST(request: NextRequest) {
     "competitive_advantage_score": 0-10,
     "scalability_score": 0-10
   },
-  "comparable_companies": [
-    {"name": "نام", "valuation": "ارزش دلاری", "stage": "مرحله", "similarity": "شباهت"}
-  ],
-  "valuation_methodology": "توضیح کامل: از کدام شرکت‌ها مقایسه کردی، چه ضرایبی زدی، چرا این عدد",
   "revenue_projection": {
-    "year_1": "درآمد سال اول",
-    "year_3": "درآمد سال سوم", 
-    "explanation": "چطور محاسبه کردی"
+    "year_1": "$XX,XXX",
+    "year_3": "$XXX,XXX",
+    "explanation": "توضیح به فارسی"
   },
   "competitor_analysis": {
     "direct_competitors": ["رقیب ۱", "رقیب ۲"],
     "indirect_competitors": ["رقیب غیرمستقیم"],
-    "competitive_advantage": "مزیت این ایده",
+    "competitive_advantage": "مزیت رقابتی به فارسی",
     "market_share_potential": "پتانسیل سهم بازار"
   },
   "scalability_analysis": {
     "score": 0-10,
-    "reasoning": "دلیل",
-    "scaling_challenges": "چالش‌ها"
+    "reasoning": "دلیل به فارسی",
+    "scaling_challenges": "چالش‌های رشد"
   },
-  "reasoning": "تحلیل کامل",
-  "comparable_startups": ["استارتاپ ۱ - $X", "استارتاپ ۲ - $X"],
-  "risk_adjusted_value": "ارزش با ریسک به تومان",
-  "investment_recommendation": "توصیه",
+  "reasoning": "تحلیل کامل به فارسی - توضیح دهید چرا این ارزش‌گذاری منطقی است",
+  "comparable_startups": ["Startup 1 ($2M)", "Startup 2 ($5M)"],
+  "risk_adjusted_value": "$XXX,XXX",
+  "investment_recommendation": "توصیه سرمایه‌گذاری به فارسی",
   "valuation_range": {
     "min_usd": "$XXX,XXX",
-    "max_usd": "$XXX,XXX",
-    "min_irr": "X تومان",
-    "max_irr": "X تومان"
+    "max_usd": "$XXX,XXX"
   }
 }
 
-نرخ تبدیل: 1 دلار = 119,000 تومان
-همه متن‌ها فارسی باشد.`;
+All text in Persian, all monetary values in USD.`;
+
 
     const userPrompt = `ایده: ${body.idea}
 

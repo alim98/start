@@ -54,6 +54,18 @@ export default async function Portal() {
       color: 'emerald',
       gradient: 'from-emerald-500 to-teal-600',
       tag: '🇮🇷 صندوق'
+    },
+    {
+      id: 'pricing',
+      appMode: 'park',
+      title: 'قیمت‌گذاری هوشمند',
+      subtitle: 'AI Pricing',
+      description: 'تخمین قیمت جهانی ایده استارتاپی شما با هوش مصنوعی.',
+      href: '/pricing',
+      icon: '💰',
+      color: 'amber',
+      gradient: 'from-amber-500 to-orange-600',
+      tag: '🌍 Global'
     }
   ];
 

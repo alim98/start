@@ -138,11 +138,14 @@ export default function PricingPage() {
             💰 قیمت‌گذاری هوش مصنوعی ایده
           </h1>
           <p className="text-lg text-slate-600">
-            ارزش واقعی ایده استارتاپی خود را با هوش مصنوعی محاسبه کنید
+            تخمین ارزش جهانی ایده استارتاپی شما با هوش مصنوعی
           </p>
-          <p className="text-sm text-slate-500 mt-2">
-            تخمین ارزش بر اساس بازار، نوآوری، و پتانسیل درآمدزایی
-          </p>
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-sm text-amber-800">
+              <span className="font-bold">⚠️ توجه:</span> به دلیل عدم وجود بنچمارک دقیق استارتاپ‌های ایرانی،
+              این ارزش‌گذاری بر اساس استانداردهای بازار جهانی و استارتاپ‌های مشابه بین‌المللی محاسبه می‌شود.
+            </p>
+          </div>
         </div>
 
         {/* Form */}
@@ -287,16 +290,25 @@ export default function PricingPage() {
         {/* Results */}
         {result && (
           <div className="bg-white rounded-lg shadow-lg p-8 space-y-8">
+            {/* Disclaimer */}
+            {result.disclaimer && (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 mb-6">
+                <p className="text-sm text-amber-900 leading-relaxed text-center">
+                  {result.disclaimer}
+                </p>
+              </div>
+            )}
+
             {/* Main Valuation */}
             <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl p-8 text-center shadow-xl">
               <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-3">
-                <h2 className="text-sm font-semibold text-white">💎 ارزش تخمینی ایده شما</h2>
+                <h2 className="text-sm font-semibold text-white">💎 ارزش تخمینی جهانی ایده شما</h2>
               </div>
               <div className="text-5xl md:text-6xl font-black text-white mb-2 drop-shadow-lg">
-                {formatPrice(result.estimated_value_irr)}
+                {result.estimated_value_usd}
               </div>
               <div className="text-lg text-teal-100 font-medium">
-                معادل {result.estimated_value_usd} دلار
+                بر اساس استانداردهای بازار جهانی
               </div>
             </div>
 
@@ -304,18 +316,16 @@ export default function PricingPage() {
             <div className="bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-slate-200 rounded-xl p-6">
               <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <span className="text-2xl">📊</span>
-                <span>محدوده ارزش‌گذاری</span>
+                <span>محدوده ارزش‌گذاری (USD)</span>
               </h3>
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-xl shadow-lg">
                   <p className="text-sm text-blue-100 mb-2 font-medium">🔽 حداقل ارزش</p>
-                  <p className="text-3xl font-black text-white mb-1">{formatPrice(result.valuation_range.min_irr)}</p>
-                  <p className="text-xs text-blue-100">{result.valuation_range.min_usd}</p>
+                  <p className="text-3xl font-black text-white">{result.valuation_range.min_usd}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-500 to-green-600 p-5 rounded-xl shadow-lg">
                   <p className="text-sm text-green-100 mb-2 font-medium">🔼 حداکثر ارزش</p>
-                  <p className="text-3xl font-black text-white mb-1">{formatPrice(result.valuation_range.max_irr)}</p>
-                  <p className="text-xs text-green-100">{result.valuation_range.max_usd}</p>
+                  <p className="text-3xl font-black text-white">{result.valuation_range.max_usd}</p>
                 </div>
               </div>
             </div>
@@ -482,9 +492,9 @@ export default function PricingPage() {
             <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-300 rounded-xl p-6">
               <h3 className="font-bold text-orange-900 mb-3 flex items-center gap-2">
                 <span className="text-2xl">⚠️</span>
-                <span>ارزش تعدیل‌شده با ریسک</span>
+                <span>ارزش تعدیل‌شده با ریسک (USD)</span>
               </h3>
-              <p className="text-4xl font-black text-orange-700 mb-3">{formatPrice(result.risk_adjusted_value)}</p>
+              <p className="text-4xl font-black text-orange-700 mb-3">{result.risk_adjusted_value}</p>
               <p className="text-sm text-orange-800 leading-relaxed">این عدد ارزش واقعی‌تر ایده با در نظر گرفتن ریسک‌های اجرایی، بازار و رقابت است.</p>
             </div>
 
