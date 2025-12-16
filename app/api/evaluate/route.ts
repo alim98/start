@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGroqClient } from '@/lib/groq-client';
 import { checkUsageLimit, recordUsage } from '@/lib/usage-check';
 
-import { prisma } from '@/lib/idea-database';
+// Database disabled - prisma removed
 
 interface EvaluationRequest {
   title: string;
@@ -172,25 +172,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Evaluation successful, returning result');
 
-    // Save to Database (if available)
-    if (prisma) {
-      try {
-        await prisma.userSubmission.create({
-          data: {
-            title: body.title || 'بدون عنوان',
-            description: body.description,
-            industry: body.skills, // Mapping 'skills' to industry as best effort
-            targetMarket: body.targetMarket,
-            language: 'fa',
-            score: evaluation.score || 50,
-            verdict: evaluation.verdict,
-            analysisJson: JSON.stringify(evaluation)
-          }
-        });
-      } catch (err) {
-        console.error('Failed to save Persian submission:', err);
-      }
-    }
+    // Database save disabled - uncomment when DB is configured
+    // try {
+    //   await prisma.userSubmission.create({...});
+    // } catch (err) {
+    //   console.error('Failed to save Persian submission:', err);
+    // }
 
     // Record usage
     await recordUsage();
