@@ -2,7 +2,7 @@
 // Set APP_MODE environment variable to control which app is shown:
 // - 'en': English Evaluator only
 // - 'fa': Persian Evaluator + Pricing
-// - 'park': Fund Demo (Persian + English)
+// - 'park': Fund Demo (Persian only)
 // - 'all' or undefined: Show all apps (portal mode)
 
 export type AppMode = 'en' | 'fa' | 'park' | 'all';
@@ -35,7 +35,7 @@ export function getAppConfig(mode: AppMode) {
             return {
                 name: 'دمو صندوق فناوری',
                 defaultRoute: '/park-demo',
-                allowedRoutes: ['/park-demo', '/park-demo-en', '/api/park-evaluate', '/api/capture-email'],
+                allowedRoutes: ['/park-demo', '/api/park-evaluate', '/api/capture-email'],
                 showPortal: false,
             };
         case 'all':

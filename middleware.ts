@@ -37,7 +37,7 @@ function getAllowedRoutes(mode: AppMode): string[] | 'all' {
             ];
         case 'park':
             return [
-                '/', '/park-demo', '/park-demo-en', '/login',
+                '/', '/park-demo', '/login',
                 '/api/auth', '/api/park-evaluate', '/api/capture-email',
                 '/_next', '/favicon.ico'
             ];
@@ -63,8 +63,29 @@ function parseSessionToken(token: string): { username: string; allowedApps: stri
     }
 }
 
+// Detect which app mode a route belongs to
+function getRouteAppMode(pathname: string): AppMode | null {
+    if (pathname.startsWith('/en') || pathname.startsWith('/api/evaluate-en') ||
+        pathname.startsWith('/api/generate-idea-en') || pathname.startsWith('/api/premium-report-en') ||
+        pathname.startsWith('/api/generate-pitch-deck')) {
+        return 'en';
+    }
+    if (pathname.startsWith('/fa') || pathname.startsWith('/pricing') ||
+        pathname.startsWith('/api/evaluate') || pathname.startsWith('/api/generate-idea') ||
+        pathname.startsWith('/api/premium-report') || pathname.startsWith('/api/price-idea') ||
+        pathname.startsWith('/api/generate-pitch-deck-fa')) {
+        return 'fa';
+    }
+    if (pathname.startsWith('/park-demo') || pathname.startsWith('/api/park-evaluate')) {
+        return 'park';
+    }
+    // Portal, login, and common routes
+    return null;
+}
+
 // Check if user has access to the current app mode
-function userHasAppAccess(allowedApps: string[], appMode: AppMode): boolean {
+function userHasAppAccess(allowedApps: string[], appMode: AppMode | null): boolean {
+    if (!appMode) return true; // Common routes (portal, login)
     if (allowedApps.includes('all')) return true;
     return allowedApps.includes(appMode);
 }
@@ -137,16 +158,14 @@ export function middleware(request: NextRequest) {
         return response;
     }
 
-    // Check if user has access to this app mode
-    if (mode !== 'all' && !userHasAppAccess(session.allowedApps || [], mode)) {
-        // User doesn't have access to this app
+    // Check if user has access to this specific route
+    const routeAppMode = getRouteAppMode(pathname);
+    if (!userHasAppAccess(session.allowedApps || [], routeAppMode)) {
+        // User doesn't have access to this route
         const url = request.nextUrl.clone();
-        url.pathname = '/login';
+        url.pathname = '/';
         url.searchParams.set('error', 'no_access');
-        const response = NextResponse.redirect(url);
-        // Clear session since they can't use this app
-        response.cookies.delete('user_session');
-        return response;
+        return NextResponse.redirect(url);
     }
 
     return NextResponse.next();

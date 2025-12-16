@@ -21,7 +21,7 @@ interface EvaluationResult {
   regulatory_risk: string;
   risks: string[];
   justification: string;
-  score?: number; // Backend doesn't send this yet, we can calculate or default it
+  score?: number;
   scoreBreakdown?: {
     market: number;
     technical: number;
@@ -32,6 +32,19 @@ interface EvaluationResult {
     name: string;
     reason: string;
   }[];
+  similarStartups?: {
+    name: string;
+    tagline: string;
+    category: string;
+    revenueModel: string;
+    complexity?: string;
+    funding?: string;
+    revenue?: string;
+    website?: string;
+    upvotes?: number;
+  }[];
+  detectedCategory?: string;
+  detectedRevenueModel?: string;
   premium?: {
     pre_launch_steps: string[];
     roadmap: {
@@ -419,7 +432,6 @@ export default function Home() {
         <AppHeader
           navLinks={[
             { href: '/', label: 'خانه', icon: '🏠' },
-            { href: '/pricing', label: 'قیمت‌گذاری ایده', icon: '💰' },
           ]}
         />
 
@@ -708,6 +720,75 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Similar Startups - استارتاپ‌های مشابه */}
+            {result.similarStartups && result.similarStartups.length > 0 && (
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-3xl shadow-xl overflow-hidden border border-purple-100" dir="rtl">
+                <div className="p-8 md:p-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-800">استارتاپ‌های مشابه موفق</h3>
+                      <p className="text-sm text-slate-600">ایده شما شبیه این شرکت‌های موفق در حوزه {result.detectedCategory || 'فناوری'} است</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {result.similarStartups.map((startup, idx) => (
+                      <div key={idx} className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow border border-slate-100">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-xl font-bold text-slate-800">{startup.name}</h4>
+                              {startup.upvotes && (
+                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-bold rounded-full">
+                                  ▲ {startup.upvotes.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600 mb-3">{startup.tagline}</p>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                                {startup.category}
+                              </span>
+                              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                {startup.revenueModel}
+                              </span>
+                              {startup.complexity && (
+                                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
+                                  پیچیدگی: {startup.complexity}
+                                </span>
+                              )}
+                            </div>
+                            {(startup.funding || startup.revenue) && (
+                              <div className="flex gap-4 text-xs text-slate-500">
+                                {startup.funding && <span>💰 {startup.funding} سرمایه جذب شده</span>}
+                                {startup.revenue && <span>📈 {startup.revenue} درآمد</span>}
+                              </div>
+                            )}
+                          </div>
+                          {startup.website && (
+                            <a
+                              href={startup.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                              <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                              </svg>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Potential Acquirers Intelligence */}
             {result.potentialAcquirers && (

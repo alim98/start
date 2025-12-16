@@ -53,19 +53,7 @@ export default async function Portal() {
       icon: '🏢',
       color: 'emerald',
       gradient: 'from-emerald-500 to-teal-600',
-      tag: '🇮🇷 VC Demo'
-    },
-    {
-      id: 'park-en',
-      appMode: 'park',
-      title: 'Investment Committee',
-      subtitle: 'VC Simulation',
-      description: 'Pitch your startup to AI investors and get funding feedback.',
-      href: '/park-demo-en',
-      icon: '💼',
-      color: 'amber',
-      gradient: 'from-amber-500 to-orange-600',
-      tag: '🌍 VC Demo'
+      tag: '🇮🇷 صندوق'
     }
   ];
 

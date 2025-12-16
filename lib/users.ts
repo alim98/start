@@ -16,7 +16,7 @@ export const users: User[] = [
         username: 'drazadegan',
         password: 'drazadeganadmin123', // Change this!
         name: 'مدیر سیستم',
-        allowedApps: ['all'],
+        allowedApps: ['fa'],
         dailyLimit: 10,
         isActive: true,
     },
@@ -31,8 +31,8 @@ export const users: User[] = [
     {
         username: 'vahid',
         password: 'vahid123',
-        name: 'Demo User (English)',
-        allowedApps: ['en'],
+        name: 'کاربر صندوق',
+        allowedApps: ['park'],
         dailyLimit: 10,
         isActive: true,
     },
