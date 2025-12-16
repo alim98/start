@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGroqClient } from '@/lib/groq-client';
 import { checkUsageLimit, recordUsage } from '@/lib/usage-check';
 import { calculateStartupScore, extractScoringInputsFromDescription, type IdeaInput } from '@/lib/scoring-engine';
-import { getSimilarIdeas } from '@/lib/idea-database'; // prisma removed - DB disabled
+import { getSimilarIdeas, prisma } from '@/lib/idea-database';
 import { detectCategory, detectRevenueModel } from '@/lib/category-detector';
 
 interface EvaluationRequest {
@@ -266,12 +266,30 @@ Provide a brutally honest, realistic evaluation following the exact JSON format 
             detectedRevenueModel,
         };
 
-        // Database save disabled - uncomment when DB is configured
-        // try {
-        //     await prisma.userSubmission.create({...});
-        // } catch (dbError) {
-        //     console.error('Failed to save submission to DB:', dbError);
-        // }
+        // Save to Database (if available)
+        if (prisma) {
+            try {
+                await prisma.userSubmission.create({
+                    data: {
+                        title: body.title || 'Untitled',
+                        description: body.description,
+                        industry: body.industry,
+                        targetMarket: body.targetMarket,
+                        language: 'en',
+                        score: scoringResult.overallScore,
+                        verdict: scoringResult.verdict,
+                        analysisJson: JSON.stringify({
+                            ...evaluation,
+                            score: scoringResult.overallScore,
+                            scoreBreakdown: scoringResult.breakdown,
+                            similarStartups: allSimilarStartups
+                        })
+                    }
+                });
+            } catch (dbError) {
+                console.error('Failed to save submission to DB:', dbError);
+            }
+        }
 
         console.log('International evaluation successful, returning combined result');
         return NextResponse.json({

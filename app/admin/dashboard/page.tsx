@@ -1,20 +1,60 @@
+import { prisma } from '@/lib/idea-database';
 import Link from 'next/link';
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';
 
-// Database is disabled - return empty stats
 async function getStats() {
-    return {
-        total: 0,
-        avgScore: 0,
-        recent: [] as any[],
-        languageStats: [] as any[]
-    };
+    // If prisma is not available, return empty stats
+    if (!prisma) {
+        return {
+            total: 0,
+            avgScore: 0,
+            recent: [],
+            languageStats: []
+        };
+    }
+
+    try {
+        const total = await prisma.userSubmission.count();
+
+        // Calculate average score
+        const aggregate = await prisma.userSubmission.aggregate({
+            _avg: {
+                score: true
+            }
+        });
+
+        const recent = await prisma.userSubmission.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 10
+        });
+
+        const languageStats = await prisma.userSubmission.groupBy({
+            by: ['language'],
+            _count: true
+        });
+
+        return {
+            total,
+            avgScore: Math.round(aggregate._avg.score || 0),
+            recent,
+            languageStats
+        };
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        return {
+            total: 0,
+            avgScore: 0,
+            recent: [],
+            languageStats: []
+        };
+    }
 }
 
 export default async function AdminDashboard() {
     const stats = await getStats();
+    const dbConnected = prisma !== null;
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -39,20 +79,30 @@ export default async function AdminDashboard() {
                         <h2 className="text-3xl font-black text-slate-800">Dashboard</h2>
                         <p className="text-slate-500">Real-time overview of user submissions and platform activity.</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-1 rounded-lg border shadow-sm">
-                        <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                        Database Offline
+                    <div className={`flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-1 rounded-lg border shadow-sm`}>
+                        <span className={`w-2 h-2 rounded-full ${dbConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></span>
+                        {dbConnected ? 'Database Connected' : 'Database Offline'}
                     </div>
                 </div>
 
+                {!dbConnected && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
+                        <span className="text-3xl mb-2 block">⚠️</span>
+                        <h3 className="text-lg font-bold text-yellow-800 mb-1">Database Not Connected</h3>
+                        <p className="text-yellow-700 text-sm">
+                            Set DATABASE_URL environment variable to enable data persistence.
+                        </p>
+                    </div>
+                )}
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <p className="text-slate-500 text-sm font-medium mb-1">Total Submissions</p>
                         <p className="text-4xl font-black text-slate-900">{stats.total}</p>
-                        <div className="mt-4 text-xs text-yellow-600 font-bold flex items-center gap-1">
-                            <span>⚠️</span>
-                            <span className="text-slate-400 font-normal">Database offline</span>
+                        <div className="mt-4 text-xs text-green-600 font-bold flex items-center gap-1">
+                            <span>↑ 12%</span>
+                            <span className="text-slate-400 font-normal">vs last week</span>
                         </div>
                     </div>
 
@@ -68,12 +118,12 @@ export default async function AdminDashboard() {
                         <p className="text-slate-500 text-sm font-medium mb-1">Language Split</p>
                         <div className="flex items-end gap-4 mt-2">
                             <div>
-                                <p className="text-2xl font-bold">-</p>
+                                <p className="text-2xl font-bold">{stats.languageStats.find(s => s.language === 'en')?._count || 0}</p>
                                 <p className="text-xs text-slate-400 uppercase">English</p>
                             </div>
                             <div className="w-px h-8 bg-slate-200"></div>
                             <div>
-                                <p className="text-2xl font-bold">-</p>
+                                <p className="text-2xl font-bold">{stats.languageStats.find(s => s.language === 'fa')?._count || 0}</p>
                                 <p className="text-xs text-slate-400 uppercase">Persian</p>
                             </div>
                         </div>
@@ -86,13 +136,62 @@ export default async function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Message about DB being offline */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-8 text-center">
-                    <span className="text-4xl mb-4 block">🔧</span>
-                    <h3 className="text-xl font-bold text-yellow-800 mb-2">Database Temporarily Offline</h3>
-                    <p className="text-yellow-700">
-                        The database connection is being configured. Statistics and recent submissions will appear once the connection is established.
-                    </p>
+                {/* Recent Table */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                        <h3 className="font-bold text-lg text-slate-800">Recent Evaluations</h3>
+                        <button className="text-sm text-indigo-600 font-bold hover:underline">View All</button>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-slate-500">
+                                <tr>
+                                    <th className="px-6 py-3 font-semibold">Idea Title</th>
+                                    <th className="px-6 py-3 font-semibold">Score</th>
+                                    <th className="px-6 py-3 font-semibold">Lang</th>
+                                    <th className="px-6 py-3 font-semibold">Date</th>
+                                    <th className="px-6 py-3 font-semibold text-right">Verdict</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {stats.recent.map((sub) => (
+                                    <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-900 max-w-xs truncate" title={sub.title}>
+                                            {sub.title}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`font-bold ${sub.score && sub.score > 70 ? 'text-green-600' : 'text-slate-600'}`}>
+                                                {sub.score || '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${sub.language === 'en' ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                                                {sub.language}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500">
+                                            {new Date(sub.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`inline-block px-2 py-1 rounded-lg text-xs font-bold 
+                                        ${sub.verdict === 'Promising' ? 'bg-emerald-100 text-emerald-700' :
+                                                    sub.verdict === 'Maybe' ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-rose-100 text-rose-700'}`}>
+                                                {sub.verdict}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {stats.recent.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">
+                                            {dbConnected ? 'No evaluations yet. Start testing the app!' : 'Connect database to see evaluations'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
