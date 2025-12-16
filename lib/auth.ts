@@ -66,41 +66,84 @@ function getTodayDate(): string {
     return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
+// Helper: wrap a promise with a timeout
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    const timeout = new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), ms)
+    );
+    return Promise.race([promise, timeout]);
+}
+
+// Get usage from in-memory store
+function getInMemoryUsage(username: string): number {
+    const today = getTodayDate();
+    const key = `${username}_${today}`;
+    const usage = usageStore.get(key);
+    if (usage && usage.date === today) {
+        return usage.count;
+    }
+    return 0;
+}
+
+// Increment usage in in-memory store
+function incrementInMemoryUsage(username: string): number {
+    const today = getTodayDate();
+    const key = `${username}_${today}`;
+    const current = usageStore.get(key);
+
+    let newCount = 1;
+    if (current && current.date === today) {
+        newCount = current.count + 1;
+    }
+
+    usageStore.set(key, {
+        count: newCount,
+        date: today
+    });
+
+    return newCount;
+}
+
 export async function getUsageCount(username: string): Promise<number> {
     const today = getTodayDate();
 
+    // If no DATABASE_URL, use in-memory immediately
+    if (!process.env.DATABASE_URL) {
+        return getInMemoryUsage(username);
+    }
+
     try {
-        // Try DB first
-        if (process.env.DATABASE_URL) {
-            const usage = await prisma.dailyUsage.findUnique({
+        // Try DB with 3 second timeout
+        const usage = await withTimeout(
+            prisma.dailyUsage.findUnique({
                 where: {
                     username_date: {
                         username,
                         date: today,
                     },
                 },
-            });
-            return usage?.count || 0;
-        }
-        throw new Error('No DB');
+            }),
+            3000
+        );
+        return usage?.count || 0;
     } catch (error) {
-        // Fallback to in-memory
-        const key = `${username}_${today}`;
-        const usage = usageStore.get(key);
-        if (usage && usage.date === today) {
-            return usage.count;
-        }
-        return 0;
+        console.log('DB timeout/error, using in-memory fallback');
+        return getInMemoryUsage(username);
     }
 }
 
 export async function incrementUsage(username: string): Promise<number> {
     const today = getTodayDate();
 
+    // If no DATABASE_URL, use in-memory immediately
+    if (!process.env.DATABASE_URL) {
+        return incrementInMemoryUsage(username);
+    }
+
     try {
-        // Try DB first
-        if (process.env.DATABASE_URL) {
-            const usage = await prisma.dailyUsage.upsert({
+        // Try DB with 3 second timeout
+        const usage = await withTimeout(
+            prisma.dailyUsage.upsert({
                 where: {
                     username_date: {
                         username,
@@ -115,26 +158,13 @@ export async function incrementUsage(username: string): Promise<number> {
                 update: {
                     count: { increment: 1 },
                 },
-            });
-            return usage.count;
-        }
-        throw new Error('No DB');
+            }),
+            3000
+        );
+        return usage.count;
     } catch (error) {
-        // Fallback to in-memory
-        const key = `${username}_${today}`;
-        const current = usageStore.get(key);
-
-        let newCount = 1;
-        if (current && current.date === today) {
-            newCount = current.count + 1;
-        }
-
-        usageStore.set(key, {
-            count: newCount,
-            date: today
-        });
-
-        return newCount;
+        console.log('DB timeout/error, using in-memory fallback');
+        return incrementInMemoryUsage(username);
     }
 }
 
