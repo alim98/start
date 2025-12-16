@@ -57,7 +57,7 @@ export default async function Portal() {
     },
     {
       id: 'pricing',
-      appMode: 'park',
+      appMode: 'pricing',
       title: 'قیمت‌گذاری هوشمند',
       subtitle: 'AI Pricing',
       description: 'تخمین قیمت جهانی ایده استارتاپی شما با هوش مصنوعی.',

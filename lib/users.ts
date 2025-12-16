@@ -5,7 +5,7 @@ export interface User {
     username: string;
     password: string; // In production, use hashed passwords!
     name: string;
-    allowedApps: ('en' | 'fa' | 'park' | 'all')[];
+    allowedApps: ('en' | 'fa' | 'park' | 'pricing' | 'all')[];
     dailyLimit: number; // Max evaluations per day
     isActive: boolean;
 }
@@ -16,7 +16,7 @@ export const users: User[] = [
         username: 'drazadegan',
         password: 'drazadeganadmin123', // Change this!
         name: 'مدیر سیستم',
-        allowedApps: ['fa'],
+        allowedApps: ['fa', 'pricing'],
         dailyLimit: 10,
         isActive: true,
     },

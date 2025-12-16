@@ -5,11 +5,11 @@
 // - 'park': Fund Demo (Persian only)
 // - 'all' or undefined: Show all apps (portal mode)
 
-export type AppMode = 'en' | 'fa' | 'park' | 'all';
+export type AppMode = 'en' | 'fa' | 'park' | 'pricing' | 'all';
 
 export function getAppMode(): AppMode {
     const mode = process.env.NEXT_PUBLIC_APP_MODE || process.env.APP_MODE || 'all';
-    if (['en', 'fa', 'park', 'all'].includes(mode)) {
+    if (['en', 'fa', 'park', 'pricing', 'all'].includes(mode)) {
         return mode as AppMode;
     }
     return 'all';
@@ -36,6 +36,13 @@ export function getAppConfig(mode: AppMode) {
                 name: 'دمو صندوق فناوری',
                 defaultRoute: '/park-demo',
                 allowedRoutes: ['/park-demo', '/api/park-evaluate', '/api/capture-email'],
+                showPortal: false,
+            };
+        case 'pricing':
+            return {
+                name: 'قیمت‌گذاری هوشمند',
+                defaultRoute: '/pricing',
+                allowedRoutes: ['/pricing', '/api/price-idea', '/api/capture-email'],
                 showPortal: false,
             };
         case 'all':
