@@ -4,8 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 interface ValuationResult {
-  estimated_value_irr: string;
+  estimated_value_irr?: string;
   estimated_value_usd: string;
+  disclaimer?: string;
   valuation_breakdown: {
     market_size_score: number;
     innovation_score: number;
@@ -35,8 +36,8 @@ interface ValuationResult {
   risk_adjusted_value: string;
   investment_recommendation: string;
   valuation_range: {
-    min_irr: string;
-    max_irr: string;
+    min_irr?: string;
+    max_irr?: string;
     min_usd: string;
     max_usd: string;
   };
