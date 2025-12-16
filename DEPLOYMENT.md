@@ -18,12 +18,12 @@ The system includes built-in authentication with:
 - **App-specific access control** (users can only access their allowed apps)
 - **Daily usage limits** (prevents abuse)
 
-### Enabling Authentication
+### ⚠️ Authentication is ENABLED by default!
 
-Set `REQUIRE_AUTH=true` to enable login requirement:
+To disable auth for development, set:
 
 ```
-REQUIRE_AUTH=true
+REQUIRE_AUTH=false
 ```
 
 ### Pre-defined Users

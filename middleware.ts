@@ -12,9 +12,11 @@ function getAppMode(): AppMode {
     return 'all';
 }
 
-// Check if auth is required (can be disabled via env var)
+// Check if auth is required (enabled by default, can be disabled with REQUIRE_AUTH=false)
 function isAuthRequired(): boolean {
-    return process.env.REQUIRE_AUTH === 'true' || process.env.NEXT_PUBLIC_REQUIRE_AUTH === 'true';
+    const authSetting = process.env.REQUIRE_AUTH || process.env.NEXT_PUBLIC_REQUIRE_AUTH;
+    // Auth is required unless explicitly set to 'false'
+    return authSetting !== 'false';
 }
 
 function getAllowedRoutes(mode: AppMode): string[] | 'all' {
