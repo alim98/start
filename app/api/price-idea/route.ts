@@ -4,25 +4,112 @@ import { checkUsageLimit, recordUsage } from '@/lib/usage-check';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-
-    if (!process.env.GROQ_API_KEY) {
+    // Check usage limit
+    const usageCheck = await checkUsageLimit();
+    if (!usageCheck.allowed) {
       return NextResponse.json(
-        { error: 'Groq API key not configured' },
-        { status: 500 }
+        { error: usageCheck.error },
+        { status: 429 }
       );
     }
 
+    const body = await request.json();
+    const { idea, stage, hasPrototype, hasCustomers, teamSize, monthlyRevenue, targetMarket } = body;
 
-    const systemPrompt = `You are a professional startup valuation expert with deep knowledge of global startup markets.
+    if (!idea) {
+      return NextResponse.json(
+        { error: 'لطفاً ایده خود را وارد کنید' },
+        { status: 400 }
+      );
+    }
+
+    const groq = getGroqClient();
+
+    // STEP 1: Evaluate the idea first
+    console.log('Step 1: Evaluating idea...');
+
+    const evaluationPrompt = `You are a professional startup evaluator. Analyze this startup idea and give it a score out of 100.
+
+Startup Idea: ${idea}
+
+Details:
+- Stage: ${stage}
+- Has Prototype: ${hasPrototype}
+- Has Customers: ${hasCustomers}
+- Team Size: ${teamSize}
+- Monthly Revenue: ${monthlyRevenue}
+- Target Market: ${targetMarket}
+
+Provide a detailed evaluation in JSON format:
+
+{
+  "overall_score": 0-100,
+  "is_viable": true/false,
+  "evaluation_summary": "Summary in Persian explaining the score",
+  "strengths": ["Strength 1 in Persian", "Strength 2"],
+  "weaknesses": ["Weakness 1 in Persian", "Weakness 2"],
+  "recommendation": "Should this idea be priced? Explain in Persian"
+}
+
+CRITICAL: 
+- Score below 60 = NOT viable for pricing
+- Score 60-75 = Moderate potential
+- Score 75+ = Strong potential
+- Be honest and critical
+
+Return ONLY valid JSON.`;
+
+    const evalCompletion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: evaluationPrompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 2000,
+    });
+
+    const evalContent = evalCompletion.choices[0]?.message?.content || '';
+    let cleanedEvalContent = evalContent.trim();
+    if (cleanedEvalContent.startsWith('```json')) {
+      cleanedEvalContent = cleanedEvalContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (cleanedEvalContent.startsWith('```')) {
+      cleanedEvalContent = cleanedEvalContent.replace(/```\n?/g, '');
+    }
+
+    const evaluation = JSON.parse(cleanedEvalContent);
+
+    console.log(`Evaluation score: ${evaluation.overall_score}`);
+
+    // If score is too low, return evaluation only (no pricing)
+    if (evaluation.overall_score < 60) {
+      await recordUsage();
+      return NextResponse.json({
+        not_ready_for_pricing: true,
+        evaluation,
+        message: 'این ایده هنوز آماده قیمت‌گذاری نیست. لطفاً ابتدا ایده خود را بهبود دهید.'
+      });
+    }
+
+    // STEP 2: If viable, proceed with pricing
+    console.log('Step 2: Idea is viable, proceeding with pricing...');
+
+    const pricingPrompt = `You are a professional startup valuation expert with deep knowledge of global startup markets.
 
 # IMPORTANT DISCLAIMER
 **Since accurate Iranian startup benchmark data is NOT available, this valuation is based on GLOBAL MARKET STANDARDS and comparable international startups.**
 
-# Valuation Method: Comparable Company Analysis + Market Multiples
+# Context
+This startup idea has been evaluated and scored ${evaluation.overall_score}/100, which indicates it has potential for valuation.
 
-## Your Task:
-Provide a realistic global market valuation in USD for the startup idea.
+# Startup Details
+Idea: ${idea}
+Stage: ${stage}
+Has Prototype: ${hasPrototype}
+Has Customers: ${hasCustomers}
+Team Size: ${teamSize}
+Monthly Revenue: ${monthlyRevenue}
+Target Market: ${targetMarket}
+
+# Your Task
+Provide a realistic global market valuation in USD.
 
 ## Steps:
 1. **Identify 3-5 similar global startups** with real valuations
@@ -30,13 +117,6 @@ Provide a realistic global market valuation in USD for the startup idea.
 3. **Adjust for stage:** Idea=1-3%, Prototype=5-10%, MVP=10-20%, Product=20-40% of mature valuation
 4. **Adjust for market size and traction**
 5. **Calculate final USD valuation**
-
-## Critical Rules:
-- ALL monetary values MUST be in USD (e.g., "$500,000", "$2M", "$50K")
-- Be realistic and conservative
-- Use actual comparable startup valuations
-- Explain methodology clearly
-- Include disclaimer about global market pricing
 
 ## JSON Format (ALL TEXT IN PERSIAN except monetary values in USD):
 {
@@ -76,39 +156,30 @@ Provide a realistic global market valuation in USD for the startup idea.
   }
 }
 
-All text in Persian, all monetary values in USD.`;
+CRITICAL: 
+- ALL monetary values MUST be in USD
+- Be realistic and conservative
+- Use actual comparable startup valuations
+- All text in Persian, all monetary values in USD
 
+Return ONLY valid JSON.`;
 
-    const userPrompt = `ایده: ${body.idea}
-
-مشخصات:
-- مرحله: ${body.stage}
-- پروتوتایپ: ${body.hasPrototype}
-- مشتری: ${body.hasCustomers}
-- تعداد تیم: ${body.teamSize}
-- درآمد ماهانه: ${body.monthlyRevenue}
-- بازار هدف: ${body.targetMarket}
-
-یک ارزش‌گذاری کامل و واقع‌گرایانه برای این ایده ارائه دهید.`;
-
-    console.log('Pricing idea...');
-
-    const completion = await getGroqClient().chat.completions.create({
+    const pricingCompletion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: pricingPrompt }],
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
       temperature: 0.6,
-      response_format: { type: 'json_object' },
+      max_tokens: 3000,
     });
 
-    const responseText = completion.choices[0].message.content;
-    if (!responseText) {
-      throw new Error('Empty response from Groq');
+    const pricingContent = pricingCompletion.choices[0]?.message?.content || '';
+    let cleanedPricingContent = pricingContent.trim();
+    if (cleanedPricingContent.startsWith('```json')) {
+      cleanedPricingContent = cleanedPricingContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (cleanedPricingContent.startsWith('```')) {
+      cleanedPricingContent = cleanedPricingContent.replace(/```\n?/g, '');
     }
 
-    const pricingData = JSON.parse(responseText);
+    const pricingData = JSON.parse(cleanedPricingContent);
 
     // Validate response
     const required = [
@@ -128,9 +199,8 @@ All text in Persian, all monetary values in USD.`;
 
     // Add valuation_range if not present
     if (!pricingData.valuation_range) {
-      // Extract number from USD value (e.g., "$500,000" or "$2M")
       const usdValue = pricingData.estimated_value_usd;
-      let baseUSD = 500000; // default
+      let baseUSD = 500000;
 
       if (usdValue.includes('M')) {
         const match = usdValue.match(/([\d.]+)M/);
@@ -149,46 +219,18 @@ All text in Persian, all monetary values in USD.`;
       };
     }
 
-    console.log('Pricing completed');
+    // Add evaluation info to the response
+    pricingData.evaluation_score = evaluation.overall_score;
+    pricingData.evaluation_summary = evaluation.evaluation_summary;
+
+    console.log('Pricing completed successfully');
+
+    // Record usage
+    await recordUsage();
 
     return NextResponse.json(pricingData);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Pricing error:', error);
-
-    // Check if it's a rate limit error (multiple ways to detect)
-    const isRateLimit =
-      error?.status === 429 ||
-      error?.code === 'rate_limit_exceeded' ||
-      (error?.message && error.message.includes('Rate limit')) ||
-      (error?.message && error.message.includes('429'));
-
-    if (isRateLimit) {
-      // Extract wait time from error message
-      let waitMinutes = 'چند';
-      const timeMatch = error?.message?.match(/try again in (\d+)m/i);
-      if (timeMatch) {
-        waitMinutes = timeMatch[1];
-      }
-
-      // Extract usage info from error message
-      let usageInfo = '';
-      const usedMatch = error?.message?.match(/Used (\d+)/);
-      const limitMatch = error?.message?.match(/Limit (\d+)/);
-      if (usedMatch && limitMatch) {
-        const used = parseInt(usedMatch[1]);
-        const limit = parseInt(limitMatch[1]);
-        const percentage = Math.round((used / limit) * 100);
-        usageInfo = `\n\n📊 استفاده شده: ${used.toLocaleString('fa-IR')} از ${limit.toLocaleString('fa-IR')} توکن (${percentage}%)`;
-      }
-
-      return NextResponse.json(
-        {
-          error: `⏳ محدودیت استفاده رایگان!\n\nمیزان استفاده رایگان روزانه شما به پایان رسیده است.${usageInfo}\n\n⏰ لطفاً ${waitMinutes} دقیقه دیگر صبر کنید و مجدداً تلاش کنید.\n\n💡 راهکار: می‌توانید یک API Key جدید از console.groq.com دریافت کنید.`
-        },
-        { status: 429 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'خطا در قیمت‌گذاری. لطفاً دوباره تلاش کنید.' },
       { status: 500 }

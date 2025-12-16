@@ -77,6 +77,12 @@ export default function PricingPage() {
         throw new Error(data.error || 'خطا در قیمت‌گذاری');
       }
 
+      // Check if idea is not ready for pricing
+      if (data.not_ready_for_pricing) {
+        setError(data.message + '\n\n' + data.evaluation.evaluation_summary);
+        return;
+      }
+
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطایی رخ داد');
