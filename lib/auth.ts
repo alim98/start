@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import { User, findUser, hasAppAccess } from './users';
 
 const SESSION_COOKIE = 'user_session';
-const USAGE_PREFIX = 'usage_';
 
 // Simple session data structure
 export interface SessionData {
@@ -56,26 +55,18 @@ export async function canAccessApp(appMode: string): Promise<boolean> {
     return hasAppAccess(user, appMode);
 }
 
-// Usage tracking using database (persists across server restarts)
-import { prisma } from './idea-database';
+// ============================================
+// Usage tracking - IN-MEMORY ONLY
+// Database disabled until MongoDB is fixed
+// ============================================
 
-// In-memory fallback for when DB is not available
 const usageStore = new Map<string, { count: number; date: string }>();
 
 function getTodayDate(): string {
     return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
-// Helper: wrap a promise with a timeout
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-    const timeout = new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), ms)
-    );
-    return Promise.race([promise, timeout]);
-}
-
-// Get usage from in-memory store
-function getInMemoryUsage(username: string): number {
+export async function getUsageCount(username: string): Promise<number> {
     const today = getTodayDate();
     const key = `${username}_${today}`;
     const usage = usageStore.get(key);
@@ -85,8 +76,7 @@ function getInMemoryUsage(username: string): number {
     return 0;
 }
 
-// Increment usage in in-memory store
-function incrementInMemoryUsage(username: string): number {
+export async function incrementUsage(username: string): Promise<number> {
     const today = getTodayDate();
     const key = `${username}_${today}`;
     const current = usageStore.get(key);
@@ -102,70 +92,6 @@ function incrementInMemoryUsage(username: string): number {
     });
 
     return newCount;
-}
-
-export async function getUsageCount(username: string): Promise<number> {
-    const today = getTodayDate();
-
-    // If no DATABASE_URL, use in-memory immediately
-    if (!process.env.DATABASE_URL) {
-        return getInMemoryUsage(username);
-    }
-
-    try {
-        // Try DB with 3 second timeout
-        const usage = await withTimeout(
-            prisma.dailyUsage.findUnique({
-                where: {
-                    username_date: {
-                        username,
-                        date: today,
-                    },
-                },
-            }),
-            3000
-        );
-        return usage?.count || 0;
-    } catch (error) {
-        console.log('DB timeout/error, using in-memory fallback');
-        return getInMemoryUsage(username);
-    }
-}
-
-export async function incrementUsage(username: string): Promise<number> {
-    const today = getTodayDate();
-
-    // If no DATABASE_URL, use in-memory immediately
-    if (!process.env.DATABASE_URL) {
-        return incrementInMemoryUsage(username);
-    }
-
-    try {
-        // Try DB with 3 second timeout
-        const usage = await withTimeout(
-            prisma.dailyUsage.upsert({
-                where: {
-                    username_date: {
-                        username,
-                        date: today,
-                    },
-                },
-                create: {
-                    username,
-                    date: today,
-                    count: 1,
-                },
-                update: {
-                    count: { increment: 1 },
-                },
-            }),
-            3000
-        );
-        return usage.count;
-    } catch (error) {
-        console.log('DB timeout/error, using in-memory fallback');
-        return incrementInMemoryUsage(username);
-    }
 }
 
 export async function getRemainingUsage(user: User): Promise<number> {
