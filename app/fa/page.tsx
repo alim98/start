@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import PricingModal from '@/components/PricingModal';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import AppHeader from '@/components/AppHeader';
 
 interface EvaluationResult {
   verdict: 'Garbage' | 'Maybe' | 'Promising';
@@ -414,34 +415,18 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 font-sans text-slate-900" dir="rtl">
       <Toaster position="top-center" />
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-4xl">
-        {/* Header */}
+        {/* Header with User Status */}
+        <AppHeader
+          navLinks={[
+            { href: '/', label: 'خانه', icon: '🏠' },
+            { href: '/en', label: 'English', icon: '🇬🇧' },
+            { href: '/pricing', label: 'قیمت‌گذاری ایده', icon: '💰' },
+            { href: '/park-demo', label: 'دمو صندوق فناوری', icon: '🏢' },
+          ]}
+        />
+
+        {/* Title Section */}
         <div className="text-center mb-10 md:mb-16 animate-fade-in-down">
-          <div className="flex justify-center gap-3 mb-6 flex-wrap">
-            <Link
-              href="/"
-              className="text-xs md:text-sm bg-slate-100 text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full hover:bg-slate-200 transition-colors font-medium flex items-center gap-2"
-            >
-              🏠 خانه
-            </Link>
-            <Link
-              href="/en"
-              className="text-xs md:text-sm bg-slate-50 text-slate-700 border border-slate-200 px-4 py-1.5 rounded-full hover:bg-slate-100 transition-colors font-medium flex items-center gap-2"
-            >
-              🇬🇧 English
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-xs md:text-sm bg-teal-50 text-teal-700 border border-teal-200 px-4 py-1.5 rounded-full hover:bg-teal-100 transition-colors font-medium"
-            >
-              💰 قیمت‌گذاری ایده
-            </Link>
-            <Link
-              href="/park-demo"
-              className="text-xs md:text-sm bg-purple-50 text-purple-700 border border-purple-200 px-4 py-1.5 rounded-full hover:bg-purple-100 transition-colors font-medium"
-            >
-              🏢 دمو صندوق فناوری
-            </Link>
-          </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight leading-tight">
             ارزیاب <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">هوشمند</span> ایده‌های استارتاپی
           </h1>
@@ -1049,6 +1034,6 @@ export default function Home() {
           );
         }}
       />
-    </div>
+    </div >
   );
 }
