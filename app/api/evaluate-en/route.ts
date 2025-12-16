@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { getGroqClient } from '@/lib/groq-client';
 import { calculateStartupScore, extractScoringInputsFromDescription, type IdeaInput } from '@/lib/scoring-engine';
 import { getSimilarIdeas, prisma } from '@/lib/idea-database'; // Use the shared db instance
 import { detectCategory, detectRevenueModel } from '@/lib/category-detector';
-
-const client = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-});
 
 interface EvaluationRequest {
     title: string;
@@ -100,7 +95,7 @@ Return ONLY a valid JSON array of objects with this structure:
 ]
 `;
 
-                const fallbackCompletion = await client.chat.completions.create({
+                const fallbackCompletion = await getGroqClient().chat.completions.create({
                     model: 'llama-3.3-70b-versatile',
                     messages: [
                         { role: 'system', content: 'You are a helpful assistant that outputs only valid JSON.' },
@@ -200,7 +195,7 @@ Be specific. Reference similar existing startups. Point out weak differentiation
 
 Provide a brutally honest, realistic evaluation following the exact JSON format specified.`;
 
-        const completion = await client.chat.completions.create({
+        const completion = await getGroqClient().chat.completions.create({
             model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: systemPrompt },

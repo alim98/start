@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 // Defining the standard 10-slide structure
 type Slide = {
@@ -65,7 +60,7 @@ Generate the 10-slide pitch deck content now.`;
 
         console.log('Generating pitch deck content...');
 
-        const completion = await client.chat.completions.create({
+        const completion = await getGroqClient().chat.completions.create({
             model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: systemPrompt },

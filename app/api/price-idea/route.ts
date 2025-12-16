@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Pricing idea...');
 
-    const completion = await client.chat.completions.create({
+    const completion = await getGroqClient().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -137,7 +132,7 @@ export async function POST(request: NextRequest) {
       // Extract numbers from estimated values and create range
       const irrMatch = pricingData.estimated_value_irr.match(/(\d+)/);
       const baseIRR = irrMatch ? parseInt(irrMatch[1]) : 100;
-      
+
       pricingData.valuation_range = {
         min_irr: `${Math.floor(baseIRR * 0.7)} میلیون تومان`,
         max_irr: `${Math.floor(baseIRR * 1.5)} میلیون تومان`,
@@ -151,14 +146,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(pricingData);
   } catch (error: any) {
     console.error('Pricing error:', error);
-    
+
     // Check if it's a rate limit error (multiple ways to detect)
-    const isRateLimit = 
-      error?.status === 429 || 
+    const isRateLimit =
+      error?.status === 429 ||
       error?.code === 'rate_limit_exceeded' ||
       (error?.message && error.message.includes('Rate limit')) ||
       (error?.message && error.message.includes('429'));
-    
+
     if (isRateLimit) {
       // Extract wait time from error message
       let waitMinutes = 'چند';
@@ -166,7 +161,7 @@ export async function POST(request: NextRequest) {
       if (timeMatch) {
         waitMinutes = timeMatch[1];
       }
-      
+
       // Extract usage info from error message
       let usageInfo = '';
       const usedMatch = error?.message?.match(/Used (\d+)/);
@@ -177,15 +172,15 @@ export async function POST(request: NextRequest) {
         const percentage = Math.round((used / limit) * 100);
         usageInfo = `\n\n📊 استفاده شده: ${used.toLocaleString('fa-IR')} از ${limit.toLocaleString('fa-IR')} توکن (${percentage}%)`;
       }
-      
+
       return NextResponse.json(
-        { 
-          error: `⏳ محدودیت استفاده رایگان!\n\nمیزان استفاده رایگان روزانه شما به پایان رسیده است.${usageInfo}\n\n⏰ لطفاً ${waitMinutes} دقیقه دیگر صبر کنید و مجدداً تلاش کنید.\n\n💡 راهکار: می‌توانید یک API Key جدید از console.groq.com دریافت کنید.` 
+        {
+          error: `⏳ محدودیت استفاده رایگان!\n\nمیزان استفاده رایگان روزانه شما به پایان رسیده است.${usageInfo}\n\n⏰ لطفاً ${waitMinutes} دقیقه دیگر صبر کنید و مجدداً تلاش کنید.\n\n💡 راهکار: می‌توانید یک API Key جدید از console.groq.com دریافت کنید.`
         },
         { status: 429 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'خطا در قیمت‌گذاری. لطفاً دوباره تلاش کنید.' },
       { status: 500 }

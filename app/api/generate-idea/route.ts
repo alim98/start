@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 interface GenerateIdeaRequest {
   mode: 'creative' | 'random';
@@ -74,11 +69,11 @@ ${body.baseIdea}
         'غذا و رستوران',
       ];
 
-      const skillsContext = body.skills === 'Tech' 
+      const skillsContext = body.skills === 'Tech'
         ? 'با تمرکز بر راه‌حل‌های فناوری و نرم‌افزاری'
         : body.skills === 'Biz'
-        ? 'با تمرکز بر مدل‌های کسب‌وکار و بازاریابی'
-        : 'که برای افراد بدون مهارت فنی قابل اجرا باشد';
+          ? 'با تمرکز بر مدل‌های کسب‌وکار و بازاریابی'
+          : 'که برای افراد بدون مهارت فنی قابل اجرا باشد';
 
       systemPrompt = `شما یک مولد ایده خلاق استارتاپ برای بازار ایران هستید.
 
@@ -107,7 +102,7 @@ ${body.baseIdea}
 
     console.log('Generating idea with mode:', body.mode);
 
-    const completion = await client.chat.completions.create({
+    const completion = await getGroqClient().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },

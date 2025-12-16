@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 interface GenerateIdeaRequest {
     mode: 'creative' | 'random';
@@ -112,7 +107,7 @@ The idea should be unique, practical and suitable for global markets.`;
 
         console.log('Generating international idea with mode:', body.mode);
 
-        const completion = await client.chat.completions.create({
+        const completion = await getGroqClient().chat.completions.create({
             model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: systemPrompt },

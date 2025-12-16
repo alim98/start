@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { getGroqClient } from '@/lib/groq-client';
 
 import { prisma } from '@/lib/idea-database';
-
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
 
 interface EvaluationRequest {
   title: string;
@@ -112,7 +107,7 @@ export async function POST(request: NextRequest) {
 
 یک ارزیابی بی‌رحمانه و واقع‌گرایانه مطابق با فرمت JSON مشخص شده ارائه دهید. همه پاسخ‌ها به فارسی باشند.`;
 
-    const completion = await client.chat.completions.create({
+    const completion = await getGroqClient().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },

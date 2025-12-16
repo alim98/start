@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 interface ParkEvaluationRequest {
   companyName: string;
@@ -102,7 +97,7 @@ export async function POST(request: NextRequest) {
 
 ارزیابی کامل با پیشنهادات Counterfactual ارائه دهید.`;
 
-    const completion = await client.chat.completions.create({
+    const completion = await getGroqClient().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -142,7 +137,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(evaluation);
   } catch (error) {
     console.error('Park evaluation error:', error);
-    
+
     if (error instanceof SyntaxError) {
       return NextResponse.json(
         { error: 'Failed to parse AI response' },

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-});
+import { getGroqClient } from '@/lib/groq-client';
 
 export async function POST(request: NextRequest) {
     try {
@@ -52,7 +47,7 @@ Generate the 10-slide pitch deck content in Persian now.`;
 
         console.log('Generating Persian pitch deck content...');
 
-        const completion = await client.chat.completions.create({
+        const completion = await getGroqClient().chat.completions.create({
             model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: systemPrompt },
