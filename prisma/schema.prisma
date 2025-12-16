@@ -6,12 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model StartupIdea {
-  id                String   @id @default(cuid())
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
   
   // Basic Info
   name              String
@@ -21,7 +21,7 @@ model StartupIdea {
   industry          String
   
   // Market Data
-  targetMarket      String   // JSON array as string for SQLite
+  targetMarket      String   // JSON array as string
   marketSize        String?
   competitorCount   Int?
   
@@ -37,7 +37,7 @@ model StartupIdea {
   funding           String?
   
   // Technical
-  techStack         String   // JSON array as string for SQLite
+  techStack         String   // JSON array as string
   requiresML        Boolean  @default(false)
   requiresBlockchain Boolean @default(false)
   complexity        String   // low, medium, high
@@ -66,7 +66,7 @@ model StartupIdea {
 }
 
 model UserSubmission {
-  id                String   @id @default(cuid())
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt         DateTime @default(now())
   
   // Input
@@ -87,7 +87,7 @@ model UserSubmission {
 }
 
 model DailyUsage {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   username  String
   date      String   // YYYY-MM-DD format
   count     Int      @default(0)
