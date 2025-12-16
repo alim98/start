@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
 import { getAppMode, getAppConfig } from '@/lib/app-config';
+import { getCurrentUser } from '@/lib/auth';
+import { hasAppAccess } from '@/lib/users';
+import PortalUserStatus from '@/components/PortalUserStatus';
 
-export default function Portal() {
+export default async function Portal() {
   const mode = getAppMode();
   const config = getAppConfig(mode);
 
@@ -12,9 +15,13 @@ export default function Portal() {
     redirect(config.defaultRoute);
   }
 
-  const apps = [
+  // Get current user to filter apps
+  const user = await getCurrentUser();
+
+  const allApps = [
     {
       id: 'eval-fa',
+      appMode: 'fa',
       title: 'ارزیاب هوشمند ایده',
       subtitle: 'نسخه فارسی',
       description: 'تحلیل دقیق ایده استارتاپی شما با هوش مصنوعی، مخصوص بازار ایران.',
@@ -26,6 +33,7 @@ export default function Portal() {
     },
     {
       id: 'eval-en',
+      appMode: 'en',
       title: 'AI Startup Evaluator',
       subtitle: 'English Version',
       description: 'Global market analysis and scoring for your startup idea.',
@@ -37,6 +45,7 @@ export default function Portal() {
     },
     {
       id: 'park-fa',
+      appMode: 'park',
       title: 'دمو صندوق فناوری',
       subtitle: 'کمیته سرمایه‌گذاری',
       description: 'شبیه‌سازی جلسه دفاع در برابر داوران پارک علم و فناوری.',
@@ -48,6 +57,7 @@ export default function Portal() {
     },
     {
       id: 'park-en',
+      appMode: 'park',
       title: 'Investment Committee',
       subtitle: 'VC Simulation',
       description: 'Pitch your startup to AI investors and get funding feedback.',
@@ -59,12 +69,20 @@ export default function Portal() {
     }
   ];
 
+  // Filter apps based on user access
+  const apps = user
+    ? allApps.filter(app => hasAppAccess(user, app.appMode))
+    : allApps; // Show all if no user (shouldn't happen if auth is required)
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100" dir="rtl">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
       <Toaster position="top-center" />
 
       <main className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+
+        {/* User Status with Tokens and Logout */}
+        <PortalUserStatus />
 
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24 animate-fade-in-down">
@@ -81,7 +99,7 @@ export default function Portal() {
         </div>
 
         {/* Grid */}
-        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+        <div className={`grid ${apps.length === 1 ? 'md:grid-cols-1 max-w-md' : apps.length <= 2 ? 'md:grid-cols-2 max-w-3xl' : 'md:grid-cols-2 max-w-5xl'} gap-6 md:gap-8 mx-auto`}>
           {apps.map((app, idx) => (
             <Link
               key={app.id}
@@ -121,6 +139,12 @@ export default function Portal() {
             </Link>
           ))}
         </div>
+
+        {apps.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-slate-500">شما به هیچ سامانه‌ای دسترسی ندارید.</p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center mt-24 text-slate-400 text-sm">

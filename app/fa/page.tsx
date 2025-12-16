@@ -419,9 +419,7 @@ export default function Home() {
         <AppHeader
           navLinks={[
             { href: '/', label: 'خانه', icon: '🏠' },
-            { href: '/en', label: 'English', icon: '🇬🇧' },
             { href: '/pricing', label: 'قیمت‌گذاری ایده', icon: '💰' },
-            { href: '/park-demo', label: 'دمو صندوق فناوری', icon: '🏢' },
           ]}
         />
 
