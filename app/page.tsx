@@ -1,7 +1,17 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
+import { getAppMode, getAppConfig } from '@/lib/app-config';
 
 export default function Portal() {
+  const mode = getAppMode();
+  const config = getAppConfig(mode);
+
+  // If not in portal mode, redirect to the default route for this app
+  if (!config.showPortal) {
+    redirect(config.defaultRoute);
+  }
+
   const apps = [
     {
       id: 'eval-fa',
