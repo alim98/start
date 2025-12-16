@@ -13,16 +13,24 @@ export interface User {
 // Pre-defined users - EDIT THIS LIST TO ADD/REMOVE USERS
 export const users: User[] = [
     {
-        username: 'admin',
-        password: 'admin123', // Change this!
+        username: 'drazadegan',
+        password: 'drazadeganadmin123', // Change this!
+        name: 'مدیر سیستم',
+        allowedApps: ['all'],
+        dailyLimit: 10,
+        isActive: true,
+    },
+    {
+        username: 'alim',
+        password: 'alim123', // Change this!
         name: 'مدیر سیستم',
         allowedApps: ['all'],
         dailyLimit: 100,
         isActive: true,
     },
     {
-        username: 'demo_en',
-        password: 'demo2024',
+        username: 'vahid',
+        password: 'vahid123',
         name: 'Demo User (English)',
         allowedApps: ['en'],
         dailyLimit: 10,
