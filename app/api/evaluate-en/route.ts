@@ -257,7 +257,7 @@ Provide a brutally honest, realistic evaluation following the exact JSON format 
                 revenueModel: startup.revenueModel,
                 upvotes: startup.upvotes,
                 website: startup.website,
-                techStack: JSON.parse(startup.techStack),
+                techStack: typeof startup.techStack === 'string' ? JSON.parse(startup.techStack) : startup.techStack,
                 complexity: startup.complexity,
                 funding: startup.funding,
                 revenue: startup.revenue,
